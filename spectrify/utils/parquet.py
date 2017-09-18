@@ -12,6 +12,8 @@ def pa_timestamp_ns():
     """
     return pa.timestamp('ns')
 
+
+# Map between SqlAlchemy type classes and pyarrow/parquet type generator functions.
 sa_type_map = {
     sa.types.BIGINT: pa.int64,
     sa.types.INTEGER: pa.int32,
@@ -22,10 +24,13 @@ sa_type_map = {
     sa.types.NVARCHAR: pa.string,
     sa.types.CHAR: pa.string,
     sa.types.BOOLEAN: pa.bool_,
+    sa.types.TIMESTAMP: pa_timestamp_ns,
     TIMESTAMP: pa_timestamp_ns,
 }
 
-# TODO: pyarrow only supports 64-bit ints right now
+# pyarrow only supports 64-bit ints right now, so turn everything into int64's
+# This is obviously inefficient across a number of dimensions...
+# TODO: PR to pyarrow to support narrower ints
 unsupported_int_types = {pa.int8, pa.int16, pa.int32}
 for sa_type, arrow_type in sa_type_map.items():
     if arrow_type in unsupported_int_types:
@@ -72,12 +77,10 @@ class Writer:
             arrow_type_func = self.col_types[i]
             arrow_type = arrow_type_func()
             if isinstance(arrow_type, TimestampType) and arrow_type.unit == 'ns':
-                # TODO: add support to pyarrow for creating nanosecond
-                #  timestamps from Python daytime objects directly
                 # Currently the only way to get a pyarrow array of nanosecond
-                # timestamps is via numpy/pandas
-                pd_arr = np.array(cols[i], dtype='datetime64[ns]')
-                arr = pa.Array.from_pandas(pd_arr, type=arrow_type)
+                # timestamps is via pandas (well, technically numpy).
+                np_arr = np.array(cols[i], dtype='datetime64[ns]')
+                arr = pa.Array.from_pandas(np_arr, type=arrow_type)
             else:
                 arr = pa.array(cols[i], arrow_type)
             arrays.append(arr)
@@ -85,5 +88,10 @@ class Writer:
 
     def _get_writer(self, table):
         if self.writer is None:
-            self.writer = pq.ParquetWriter(self.py_fd, table.schema, compression='gzip', use_deprecated_int96_timestamps=True)
+            self.writer = pq.ParquetWriter(
+                self.py_fd,
+                table.schema,
+                compression='gzip',
+                use_deprecated_int96_timestamps=True
+            )
         return self.writer
