@@ -29,6 +29,15 @@ def strip_schema(url):
     return result.netloc + result.path
 
 
+def paths_from_base_path(s3_base_path):
+    # Don't use path, since it might use backlashes on windows.
+    # S3 always wants forward slashes
+    s3_csv_path = '/'.join([s3_base_path, 'csv', ''])
+    s3_csv_manifest = s3_csv_path + 'manifest'
+    s3_spectrum_path = '/'.join([s3_base_path, 'spectrum', ''])
+    return s3_csv_path, s3_csv_manifest, s3_spectrum_path
+
+
 class S3GZipCSVReader:
     """Reads a Gzipped CSV file from S3
         Downloads and decompresses on-the-fly, so the entire file doesn't have

@@ -16,10 +16,11 @@ requirements = [
     'ciso8601',
     'Click',
     'future',
+    'pandas',
     'psycopg2',
-    'pyarrow==0.5.0.post2',
+    'pyarrow==0.7.0',
     's3fs',
-    'SQLAlchemy',
+    'sqlalchemy',
     'sqlalchemy-redshift',
 ]
 
@@ -30,7 +31,6 @@ setup_requirements = [
 
 test_requirements = [
     'pytest',
-    'pandas',  # Needed for reading in timestamp columns
 ]
 
 setup(

@@ -4,10 +4,13 @@ from __future__ import absolute_import, division, print_function
 
 import click
 
+from spectrify.convert import convert_redshift_manifest_to_parquet
 from spectrify.create import create_external_table
+from spectrify.export import export_to_csv
 from spectrify.transform import transform_table
 from spectrify.utils.redshift import ConnectionParameters, get_sa_engine
 from spectrify.utils.schema import get_table_schema
+from spectrify.utils.s3 import paths_from_base_path
 
 
 @click.group()
@@ -28,23 +31,34 @@ def cli(ctx, **kwargs):
 @click.argument('s3_path')
 @click.option('--dest-schema', default='spectrum')
 @click.option('--dest-table')
+@click.option('--workers', type=int)
 @click.pass_context
-def transform(ctx, table, s3_path, dest_schema, dest_table):
+def transform(ctx, table, s3_path, dest_schema, dest_table, workers):
     dest_table = dest_table or table
     engine = get_sa_engine(ctx)
-    transform_table(engine, table, s3_path, dest_schema, dest_table)
+    transform_table(engine, table, s3_path, dest_schema, dest_table, workers)
 
 
 @cli.command()
+@click.argument('table')
+@click.argument('s3_path')
 @click.pass_context
-def export():
-    click.echo('Export to CSV')
+def export(ctx, table, s3_path):
+    engine = get_sa_engine(ctx)
+    s3_csv_path, s3_csv_manifest, s3_spectrum_path = paths_from_base_path(s3_path)
+    export_to_csv(engine, table, s3_csv_path)
 
 
 @cli.command()
+@click.argument('table')
+@click.argument('s3_path')
+@click.option('--workers', type=int)
 @click.pass_context
-def convert():
-    click.echo('Convert to parquet')
+def convert(ctx, table, s3_path, workers):
+    engine = get_sa_engine(ctx)
+    sa_table = get_table_schema(engine, table)
+    s3_csv_path, s3_csv_manifest, s3_spectrum_path = paths_from_base_path(s3_path)
+    convert_redshift_manifest_to_parquet(s3_csv_manifest, sa_table, s3_spectrum_path, workers=workers)
 
 
 @cli.command()
@@ -63,4 +77,4 @@ def create_table(ctx, s3_path, source_table, dest_table, dest_schema):
 @cli.command()
 @click.pass_context
 def add_part():
-    click.echo('Add Spectrum partition')
+    click.echo('TODO: Add Spectrum partition')

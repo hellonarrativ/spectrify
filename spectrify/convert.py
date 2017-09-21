@@ -31,10 +31,9 @@ def convert_redshift_manifest_to_parquet(manifest_path, sa_table, out_dir, worke
 
     with get_fs().open(manifest_path) as manifest_file:
         manifest = json.loads(manifest_file.read().decode('utf-8'))
-
     num_files = len(manifest['entries'])
-    workers = workers or min(num_files, cpu_count())
 
+    workers = workers or min(num_files, cpu_count())
     click.echo('Converting {} csv files to parquet with {} workers.'.format(num_files, workers))
 
     if workers > 1:
@@ -76,6 +75,14 @@ def convert_csv_file_to_parquet(data_path, sa_table, out_dir):
 
     with get_fs().open(out_path, 'wb') as s3_file:
         with Writer(s3_file, sa_table) as writer:
+
+            # Read the data in chunks (to control memory usage) and write to parquet.
+            # The obvious choice is to use Pandas for this, but issues with null values and
+            # difficulty with type conversions were a blocker when I originally wrote this code.
+            # It's possible the situation has evolved.
+            #
+            # Assuming those issues have solutions, using Pandas would probably be much more
+            # efficient in terms of CPU and memory.
             for chunk in columnar_data_chunks(data_path, sa_table, SPECTRIFY_ROWS_PER_GROUP):
                 writer.write_row_group(chunk)
 
@@ -107,9 +114,15 @@ def _convert_to_type(value, py_type):
 
 def columnar_data_chunks(data_path, sa_table, chunk_size):
     """A generator function that returns chunk_size rows (or whatever is left
-    at the end of the file in columnar format)
+    at the end of the file) in columnar format
+    This function also performs conversion from string to python datatype based on the given
+    SQLAlchemy schema.
     """
+
+    # An array of functions corresponding to the CSV columns that take a string and return the
+    # corresponding Python datatype
     type_converters = table_to_conversion_funcs(sa_table)
+
     with S3GZipCSVReader(data_path, delimiter='|', escapechar='\\', quoting=csv.QUOTE_NONE) as reader:
         num_cols = len(sa_table.columns)
         col_indices = range(num_cols)

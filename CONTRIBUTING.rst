@@ -66,9 +66,9 @@ Ready to contribute? Here's how to set up `spectrify` for local development.
 
 3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
 
-    $ mkvirtualenv spectrify
+    $ mkvirtualenv spectrify -p `which python3`  # or python2, if you prefer
     $ cd spectrify/
-    $ python setup.py develop
+    $ pip install -e .
 
 4. Create a branch for local development::
 
@@ -101,7 +101,7 @@ Before you submit a pull request, check that it meets these guidelines:
 2. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
-3. The pull request should work for Python 2.7, 3.4 and 3.5, 3.6, and for PyPy. Check
+3. The pull request should work for Python 2.7, 3.4 and 3.5, and 3.6. Check
    https://travis-ci.org/hellonarrativ/spectrify/pull_requests
    and make sure that the tests pass for all supported Python versions.
 
@@ -111,4 +111,3 @@ Tips
 To run a subset of tests::
 
 $ py.test tests.test_spectrify
-
