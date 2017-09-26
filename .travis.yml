@@ -14,14 +14,24 @@ install: pip install -U tox-travis
 # command to run tests, e.g. python setup.py test
 script: tox
 
-# After you create the Github repo and add it to Travis, run the
-# travis_pypi_setup.py script to finish PyPI deployment setup
 deploy:
   provider: pypi
   distributions: sdist bdist_wheel
   user: narrativ
   password:
-    secure: PLEASE_REPLACE_ME
+    secure: !!binary |
+      WExaenFxcGJLQXhIb3pmTU45ckFpeGxEc2xVT1RqOHZ2RmVQRS9aZ2tpbGtIYmkyT3hZYnZsM1E1
+      djVFV21jKzRPSmRjMGlBUjFZWVpIQzdoQTJydDE5d1hGUUg3YVJTdVptZHpEUFFINHFoL2JSZm4r
+      Rzl2elQ4TWZ5aFo0TGdmSWhTZ2ViUi9MMU1sR2Fpa3hxVHhsS2ZxMjBaeEF3OEEvdkVZMUt2THZt
+      bk5LWWZKNDRHaUowZlZzK1VsL1dlRGpJOWFqdzRuVUV0b3FNais3Z2t3U2hrYU1XYnN6QjdGUjl3
+      MWVjbEVGT1JISERtcS83MHROOGpMREtSSUtyRmx0QU1WNjBaTVExY0FNTlZaRWRYZ2FRNFJFb2dX
+      bWpvVmdMMTRUZ3M4L0tzcEpPUTc3bS9YMllINDluaUlQYlZKOTlSbUYzVFV5Yi94VFNaMkRjNlBp
+      bXpnK2JsRkdhUVVmOEt0L1locVUxcVZZbDV6bXV4NkJ6TFY3WFZXWlUrL0NqK3ZCYmVIMHRCSzVV
+      c2lrbVF4b25nU3k3T3FXRXNDa2NZZ1NGYTBUUnpQdlc3bUpFZW95T3UzYzZGMktzWWp5emVHR2dK
+      bjFuVVZGUGdzNTl2Nm9UZVBqcVBEL1JEY2w4ZUNVYzJzMFdsWVViWkZHV0JiL3Z4V093Y3o2Y0t0
+      VTFQZis4Z3BJQmZLRmJGUlRqRUJaVUFva2RzcC9WNXJ6U1lUOXhtdjR5OVl4SHd4U1lTVjFRY1BC
+      ZDlMT0FVQVI5R1ZYeXNPeC90UEJMUHd0dVhzYmtOYzRYV2VvMWZCMUJyQmZJQzhkVll4NFBjVDdj
+      NnAxT2JKRjg4NjdoSEtxMzY1bjVLVTIxTktVOUhHSHFVTy9BWGQ0TTNSais1d0JxdnV1MnBydUU9
   on:
     tags: true
     repo: hellonarrativ/spectrify
