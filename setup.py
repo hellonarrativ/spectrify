@@ -38,7 +38,7 @@ setup(
     version='0.1.0',
     description="Tools for working with Redshift Spectrum.",
     long_description=readme + '\n\n' + history,
-    author="Narrativ, Inc",
+    author="The Narrativ Company, Inc.",
     author_email='engineering@narrativ.com',
     url='https://github.com/hellonarrativ/spectrify',
     packages=find_packages(include=['spectrify']),

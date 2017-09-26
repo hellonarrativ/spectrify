@@ -5,7 +5,7 @@ Credits
 Development Lead
 ----------------
 
-* Narrativ, Inc <engineering@narrativ.com>
+* Colin Nichols <engineering@narrativ.com>
 
 Contributors
 ------------

@@ -56,7 +56,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Spectrify'
-copyright = u"2017, Narrativ, Inc"
+copyright = u"2017 The Narrativ Company, Inc."
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -210,7 +210,7 @@ latex_elements = {
 latex_documents = [
     ('index', 'spectrify.tex',
      u'Spectrify Documentation',
-     u'Narrativ, Inc', 'manual'),
+     u'The Narrativ Company, Inc.', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at
@@ -241,7 +241,7 @@ latex_documents = [
 man_pages = [
     ('index', 'spectrify',
      u'Spectrify Documentation',
-     [u'Narrativ, Inc'], 1)
+     [u'The Narrativ Company, Inc.'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -256,7 +256,7 @@ man_pages = [
 texinfo_documents = [
     ('index', 'spectrify',
      u'Spectrify Documentation',
-     u'Narrativ, Inc',
+     u'The Narrativ Company, Inc.',
      'spectrify',
      'One line description of project.',
      'Miscellaneous'),
