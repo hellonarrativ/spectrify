@@ -46,7 +46,7 @@ Install
 Command-line Usage
 -----
 
-Export to S3:
+Export Redshift table `my_table` to a folder of CSV files on S3:
 
 .. code-block::
 
@@ -60,12 +60,19 @@ Convert exported CSVs to Parquet:
     $ spectrify --host=example-url.redshift.aws.com --user=myuser --db=mydb convert my_table \
         's3://example-bucket/my_table'
 
-Create Spectrum table from S3 parquet folder:
+Create Spectrum table from S3 folder:
 
 .. code-block::
 
     $ spectrify --host=example-url.redshift.aws.com --user=myuser --db=mydb create_table \
         's3://example-bucket/my_table' my_table my_spectrum_table
+
+Transform Redshift table by performing all 3 steps in sequence:
+
+.. code-block::
+
+    $ spectrify --host=example-url.redshift.aws.com --user=myuser --db=mydb transform my_table \
+        's3://example-bucket/my_table'
 
 
 Python Usage
@@ -97,6 +104,13 @@ Create Spectrum table from S3 parquet folder:
     from spectrify.utils.schema import get_table_schema
     sa_table = get_table_schema(sa_engine, source_table_name)
     create_external_table(sa_engine, dest_schema, dest_table_name, sa_table, s3_spectrum_path)
+
+Transform Redshift table by performing all 3 steps in sequence:
+
+.. code-block:: python
+
+    from spectrify.transform import transform_table
+    transform_table(sa_engine, table_name, s3_base_path, dest_schema, dest_table, num_workers)
 
 Contribute
 -----
