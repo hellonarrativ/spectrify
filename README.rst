@@ -44,7 +44,7 @@ Install
 
 
 Command-line Usage
------
+------------------
 
 Export Redshift table `my_table` to a folder of CSV files on S3:
 
@@ -76,7 +76,7 @@ Transform Redshift table by performing all 3 steps in sequence:
 
 
 Python Usage
------
+------------
 
 Currently, you'll have to supply your own SQL Alchemy engine to each of the below commands (pull requests welcome to make this eaiser).
 
@@ -113,9 +113,9 @@ Transform Redshift table by performing all 3 steps in sequence:
     transform_table(sa_engine, table_name, s3_base_path, dest_schema, dest_table, num_workers)
 
 Contribute
------
+----------
 Contributions always welcome! Read our guide on contributing here: http://spectrify.readthedocs.io/en/latest/contributing.html
 
 License
------
+-------
 MIT License. Copyright (c) 2017, The Narrativ Company, Inc.
