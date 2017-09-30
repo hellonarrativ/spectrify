@@ -2,7 +2,7 @@ import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 import sqlalchemy as sa
-from pyarrow.lib import TimestampType
+from pyarrow.lib import TimestampType, Type_INT8, Type_INT16, Type_INT32
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 
 
@@ -17,7 +17,7 @@ def pa_timestamp_ns():
 sa_type_map = {
     sa.types.BIGINT: pa.int64,
     sa.types.INTEGER: pa.int32,
-    sa.types.SMALLINT: pa.int32,  # 32 bits to be on the safe side...
+    sa.types.SMALLINT: pa.int16,
     sa.types.FLOAT: pa.float64,
     DOUBLE_PRECISION: pa.float64,
     sa.types.VARCHAR: pa.string,
@@ -27,14 +27,6 @@ sa_type_map = {
     sa.types.TIMESTAMP: pa_timestamp_ns,
     TIMESTAMP: pa_timestamp_ns,
 }
-
-# pyarrow only supports 64-bit ints right now, so turn everything into int64's
-# This is obviously inefficient across a number of dimensions...
-# TODO: PR to pyarrow to support narrower ints
-unsupported_int_types = {pa.int8, pa.int16, pa.int32}
-for sa_type, arrow_type in sa_type_map.items():
-    if arrow_type in unsupported_int_types:
-        sa_type_map[sa_type] = pa.int64
 
 
 class Writer:
@@ -81,6 +73,11 @@ class Writer:
                 # timestamps is via pandas (well, technically numpy).
                 np_arr = np.array(cols[i], dtype='datetime64[ns]')
                 arr = pa.Array.from_pandas(np_arr, type=arrow_type)
+            elif arrow_type.id in [Type_INT8, Type_INT16, Type_INT32]:
+                # Workaround for issue in pyarrow 0.7.x
+                # TODO: Remove this once pyarrow 0.8.0 is released
+                arr64 = pa.array(cols[i], pa.int64())
+                arr = arr64.cast(arrow_type)
             else:
                 arr = pa.array(cols[i], arrow_type)
             arrays.append(arr)
