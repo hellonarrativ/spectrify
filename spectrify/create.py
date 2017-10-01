@@ -15,8 +15,6 @@ location '{s3_location}'
 
 type_map = {
     DOUBLE_PRECISION: types.FLOAT,  # Replace postgres-specific with more generic
-    types.INTEGER: types.BIGINT,
-    types.SMALLINT: types.BIGINT,
 }
 
 

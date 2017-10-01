@@ -53,8 +53,8 @@ class TestParquetWriter(TestCase):
 
         self.expected_datatypes = [
             pa.int64(),
-            pa.int64(),
-            pa.int64(),
+            pa.int32(),
+            pa.int16(),
             pa.bool_(),
             pa.string(),
             pa.timestamp('ns'),
