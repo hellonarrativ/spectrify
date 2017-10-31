@@ -4,4 +4,4 @@
 
 __author__ = """The Narrativ Company, Inc."""
 __email__ = 'engineering@narrativ.com'
-__version__ = '0.2.1'
+__version__ = '0.3.0'
