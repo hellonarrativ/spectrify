@@ -41,7 +41,7 @@ setup(
     author="The Narrativ Company, Inc.",
     author_email='engineering@narrativ.com',
     url='https://github.com/hellonarrativ/spectrify',
-    packages=find_packages(include=['spectrify']),
+    packages=find_packages(include=['spectrify', 'spectrify.*']),
     entry_points={
         'console_scripts': [
             'spectrify=spectrify.main:cli'
