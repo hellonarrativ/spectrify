@@ -18,7 +18,7 @@ requirements = [
     'future',
     'pandas',
     'psycopg2',
-    'pyarrow==0.7.0',
+    'pyarrow==0.8.0',
     's3fs',
     'sqlalchemy',
     'sqlalchemy-redshift',
