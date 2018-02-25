@@ -1,30 +1,7 @@
 import pyarrow as pa
 import pyarrow.parquet as pq
-import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 
-
-def pa_timestamp_ns():
-    """Wrapper function around Arrow's timestamp type function, which is the
-    only type function that requires an argument...
-    """
-    return pa.timestamp('ns')
-
-
-# Map between SqlAlchemy type classes and pyarrow/parquet type generator functions.
-sa_type_map = {
-    sa.types.BIGINT: pa.int64,
-    sa.types.INTEGER: pa.int32,
-    sa.types.SMALLINT: pa.int16,
-    sa.types.FLOAT: pa.float64,
-    DOUBLE_PRECISION: pa.float64,
-    sa.types.VARCHAR: pa.string,
-    sa.types.NVARCHAR: pa.string,
-    sa.types.CHAR: pa.string,
-    sa.types.BOOLEAN: pa.bool_,
-    sa.types.TIMESTAMP: pa_timestamp_ns,
-    TIMESTAMP: pa_timestamp_ns,
-}
+from spectrify.utils.schema import sa_type_map
 
 
 class Writer:
