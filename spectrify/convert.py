@@ -26,6 +26,22 @@ from spectrify.utils.s3 import get_fs, S3GZipCSVReader
 SPECTRIFY_ROWS_PER_GROUP = environ.get('SPECTRIFY_ROWS_PER_GROUP') or 250000
 
 
+class PoolManager(object):
+    """Pool in Python 2 doesn't act as a context manager. So just make one here"""
+    def __init__(self, *args, **kwargs):
+        self.pool_args = args
+        self.pool_kwargs = kwargs
+        self.pool = None
+
+    def __enter__(self):
+        self.pool = Pool(*(self.pool_args), **(self.pool_kwargs))
+        return self.pool
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.pool.close()
+        self.pool.join()
+
+
 def convert_redshift_manifest_to_parquet(manifest_path, sa_table, out_dir, workers=None):
     """Parses manifest file and then converts each referenced file"""
 
@@ -44,8 +60,9 @@ def convert_redshift_manifest_to_parquet(manifest_path, sa_table, out_dir, worke
 
 def convert_parallel(manifest, sa_table, out_dir, workers):
     convert_args = [(entry['url'], sa_table, out_dir) for entry in manifest['entries']]
-    pool = Pool(workers)
-    pool.map(_parallel_wrapper, convert_args, chunksize=1)
+
+    with PoolManager(workers) as pool:
+        pool.map(_parallel_wrapper, convert_args, chunksize=1)
 
 
 def _parallel_wrapper(arg_tuple):
