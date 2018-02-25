@@ -1,5 +1,3 @@
-import sys
-
 import click
 from sqlalchemy.schema import CreateColumn
 from sqlalchemy import Column, types

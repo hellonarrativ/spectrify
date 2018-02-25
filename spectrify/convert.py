@@ -7,7 +7,6 @@ import sys
 import csv
 import gc
 import json
-import traceback
 from datetime import datetime
 from os import path, environ
 from multiprocessing import Pool, cpu_count
@@ -66,14 +65,8 @@ def convert_parallel(manifest, sa_table, out_dir, workers):
 
 
 def _parallel_wrapper(arg_tuple):
-    try:
-        data_path, sa_table, out_dir = arg_tuple
-        convert_csv_file_to_parquet(data_path, sa_table, out_dir)
-    except:
-        # Print traceback here, since on the other side of the parallel call
-        # we will lose the actual stacktrace.
-        traceback.print_exc()
-        raise
+    data_path, sa_table, out_dir = arg_tuple
+    convert_csv_file_to_parquet(data_path, sa_table, out_dir)
 
 
 def convert_synchronous(manifest, sa_table, out_dir):
