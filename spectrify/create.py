@@ -1,5 +1,3 @@
-import sys
-
 import click
 from sqlalchemy.schema import CreateColumn
 from sqlalchemy import Column, types
@@ -16,22 +14,6 @@ location '{s3_location}'
 type_map = {
     DOUBLE_PRECISION: types.FLOAT,  # Replace postgres-specific with more generic
 }
-
-
-def confirm():
-    while True:
-        click.echo('Continue? Y/N:', nl=False)
-        c = click.getchar(echo=True)
-        click.echo('')
-        if c.lower() == 'y':
-            return
-        elif c.lower() == 'n':
-            click.echo('')
-            click.echo('Bailing out!')
-            click.echo('')
-            sys.exit(1)
-        else:
-            click.echo('Please enter Y or N')
 
 
 def create_external_table(engine, schema_name, table_name, sa_table, s3_path):
@@ -65,7 +47,7 @@ def create_external_table(engine, schema_name, table_name, sa_table, s3_path):
     click.echo('*** CREATE TABLE SQL ***')
     click.echo(formatted_query)
     click.echo('')
-    confirm()
+    click.confirm('Continue?', abort=True)
 
     with engine.connect() as cursor:
         click.echo('Creating table...')

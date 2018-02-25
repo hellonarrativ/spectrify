@@ -7,7 +7,6 @@ import sys
 import csv
 import gc
 import json
-import traceback
 from datetime import datetime
 from os import path, environ
 from multiprocessing import Pool, cpu_count
@@ -20,7 +19,7 @@ from spectrify.utils.s3 import get_fs, S3GZipCSVReader
 # This determines the number of rows in each row group of the Parquet file.
 # Larger row group means better compression.
 # Larger row group also means more memory required for write.
-# This should process approx. 500MB of data per group.
+# Assuming a row size of 2KB, this will process approx. 500MB of data per group.
 # Actual memory usage will be some multiple of that, since multiple copies
 # are required in memory for processing.
 SPECTRIFY_ROWS_PER_GROUP = environ.get('SPECTRIFY_ROWS_PER_GROUP') or 250000
@@ -66,14 +65,8 @@ def convert_parallel(manifest, sa_table, out_dir, workers):
 
 
 def _parallel_wrapper(arg_tuple):
-    try:
-        data_path, sa_table, out_dir = arg_tuple
-        convert_csv_file_to_parquet(data_path, sa_table, out_dir)
-    except:
-        # Print traceback here, since on the other side of the parallel call
-        # we will lose the actual stacktrace.
-        traceback.print_exc()
-        raise
+    data_path, sa_table, out_dir = arg_tuple
+    convert_csv_file_to_parquet(data_path, sa_table, out_dir)
 
 
 def convert_synchronous(manifest, sa_table, out_dir):

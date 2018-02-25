@@ -1,32 +1,7 @@
-import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
-import sqlalchemy as sa
-from pyarrow.lib import TimestampType, Type_INT8, Type_INT16, Type_INT32
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 
-
-def pa_timestamp_ns():
-    """Wrapper function around Arrow's timestamp type function, which is the
-    only type function that requires an argument...
-    """
-    return pa.timestamp('ns')
-
-
-# Map between SqlAlchemy type classes and pyarrow/parquet type generator functions.
-sa_type_map = {
-    sa.types.BIGINT: pa.int64,
-    sa.types.INTEGER: pa.int32,
-    sa.types.SMALLINT: pa.int16,
-    sa.types.FLOAT: pa.float64,
-    DOUBLE_PRECISION: pa.float64,
-    sa.types.VARCHAR: pa.string,
-    sa.types.NVARCHAR: pa.string,
-    sa.types.CHAR: pa.string,
-    sa.types.BOOLEAN: pa.bool_,
-    sa.types.TIMESTAMP: pa_timestamp_ns,
-    TIMESTAMP: pa_timestamp_ns,
-}
+from spectrify.utils.schema import sa_type_map
 
 
 class Writer:
@@ -68,19 +43,9 @@ class Writer:
         for i in range(len(self.col_types)):
             arrow_type_func = self.col_types[i]
             arrow_type = arrow_type_func()
-            if isinstance(arrow_type, TimestampType) and arrow_type.unit == 'ns':
-                # Currently the only way to get a pyarrow array of nanosecond
-                # timestamps is via pandas (well, technically numpy).
-                np_arr = np.array(cols[i], dtype='datetime64[ns]')
-                arr = pa.Array.from_pandas(np_arr, type=arrow_type)
-            elif arrow_type.id in [Type_INT8, Type_INT16, Type_INT32]:
-                # Workaround for issue in pyarrow 0.7.x
-                # TODO: Remove this once pyarrow 0.8.0 is released
-                arr64 = pa.array(cols[i], pa.int64())
-                arr = arr64.cast(arrow_type)
-            else:
-                arr = pa.array(cols[i], arrow_type)
+            arr = pa.array(cols[i], arrow_type)
             arrays.append(arr)
+
         return arrays
 
     def _get_writer(self, table):
