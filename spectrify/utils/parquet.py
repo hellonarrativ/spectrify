@@ -1,8 +1,6 @@
-import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 import sqlalchemy as sa
-from pyarrow.lib import TimestampType, Type_INT8, Type_INT16, Type_INT32
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 
 
@@ -68,14 +66,9 @@ class Writer:
         for i in range(len(self.col_types)):
             arrow_type_func = self.col_types[i]
             arrow_type = arrow_type_func()
-            if isinstance(arrow_type, TimestampType) and arrow_type.unit == 'ns':
-                # Currently the only way to get a pyarrow array of nanosecond
-                # timestamps is via pandas (well, technically numpy).
-                np_arr = np.array(cols[i], dtype='datetime64[ns]')
-                arr = pa.Array.from_pandas(np_arr, type=arrow_type)
-            else:
-                arr = pa.array(cols[i], arrow_type)
+            arr = pa.array(cols[i], arrow_type)
             arrays.append(arr)
+
         return arrays
 
     def _get_writer(self, table):
