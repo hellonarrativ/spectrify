@@ -10,6 +10,8 @@ from urllib.parse import urlparse
 
 import s3fs
 
+SPECTRIFY_BLOCKSIZE = 50 * 2**20  # 50MB
+
 # https://bugs.python.org/issue12591
 if sys.version_info[0] < 3:
     class HackedGzipFile(GzipFile):
@@ -20,7 +22,7 @@ if sys.version_info[0] < 3:
 
 
 def get_fs():
-    return s3fs.S3FileSystem(anon=False)
+    return s3fs.S3FileSystem(anon=False, default_block_size=SPECTRIFY_BLOCKSIZE)
 
 
 def strip_schema(url):

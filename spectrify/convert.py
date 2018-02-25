@@ -19,7 +19,7 @@ from spectrify.utils.s3 import get_fs, S3GZipCSVReader
 # This determines the number of rows in each row group of the Parquet file.
 # Larger row group means better compression.
 # Larger row group also means more memory required for write.
-# This should process approx. 500MB of data per group.
+# Assuming a row size of 2KB, this will process approx. 500MB of data per group.
 # Actual memory usage will be some multiple of that, since multiple copies
 # are required in memory for processing.
 SPECTRIFY_ROWS_PER_GROUP = environ.get('SPECTRIFY_ROWS_PER_GROUP') or 250000
