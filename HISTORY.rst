@@ -2,6 +2,14 @@
 History
 =======
 
+0.4.0 (2018-02-25)
+------------------
+
+* Upgrade to pyarrow v0.8.0
+* Verify Redshift column types are supported before attempting conversion
+* Bugfix: Properly clean up multiprocessing.pool resource
+
+
 0.3.0 (2017-10-30)
 ------------------
 
