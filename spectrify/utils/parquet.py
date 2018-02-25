@@ -73,11 +73,6 @@ class Writer:
                 # timestamps is via pandas (well, technically numpy).
                 np_arr = np.array(cols[i], dtype='datetime64[ns]')
                 arr = pa.Array.from_pandas(np_arr, type=arrow_type)
-            elif arrow_type.id in [Type_INT8, Type_INT16, Type_INT32]:
-                # Workaround for issue in pyarrow 0.7.x
-                # TODO: Remove this once pyarrow 0.8.0 is released
-                arr64 = pa.array(cols[i], pa.int64())
-                arr = arr64.cast(arrow_type)
             else:
                 arr = pa.array(cols[i], arrow_type)
             arrays.append(arr)
