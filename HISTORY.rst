@@ -2,6 +2,12 @@
 History
 =======
 
+0.4.1 (2018-03-25)
+------------------
+
+* Fix exception when source table is not in schema public
+
+
 0.4.0 (2018-02-25)
 ------------------
 
