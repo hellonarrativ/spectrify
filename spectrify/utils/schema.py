@@ -30,8 +30,20 @@ sa_type_map = {
 
 def get_table_schema(engine, table_name):
     meta = sa.MetaData(engine)
+    schema_name = None
 
-    table = sa.Table(table_name, meta, autoload=True, postgresql_ignore_search_path=True)
+    # Handle table name prepended with schema
+    parts = table_name.split('.')
+    if len(parts) == 2:
+        schema_name, table_name = parts
+
+    table = sa.Table(
+        table_name,
+        meta,
+        autoload=True,
+        postgresql_ignore_search_path=True,
+        schema=schema_name
+    )
 
     for col in table.columns:
         if col.type.__class__ not in sa_type_map:
