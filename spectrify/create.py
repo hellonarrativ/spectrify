@@ -19,6 +19,10 @@ type_map = {
 def create_external_table(engine, schema_name, table_name, sa_table, s3_path):
     cols = list(sa_table.columns)
 
+    # If we are converting a table from another schema, include the schema
+    # in the table name.
+    table_name = table_name.replace('.', '_')
+
     col_descriptors = []
     for col in cols:
         # We only want the column name and type.
@@ -50,6 +54,7 @@ def create_external_table(engine, schema_name, table_name, sa_table, s3_path):
     click.confirm('Continue?', abort=True)
 
     with engine.connect() as cursor:
+        cursor.execution_options(isolation_level='AUTOCOMMIT')
         click.echo('Creating table...')
         cursor.execute(formatted_query)
         click.echo('Done.')

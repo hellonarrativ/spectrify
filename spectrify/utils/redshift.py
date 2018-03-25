@@ -24,4 +24,4 @@ def get_sa_engine(ctx):
         database=parms.db,
     )
 
-    return sa.create_engine(url, isolation_level="AUTOCOMMIT", connect_args={'sslmode': 'prefer'})
+    return sa.create_engine(url, connect_args={'sslmode': 'prefer'})
