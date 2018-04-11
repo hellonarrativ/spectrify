@@ -4,13 +4,13 @@ from __future__ import absolute_import, division, print_function
 
 import click
 
-from spectrify.convert import convert_redshift_manifest_to_parquet
-from spectrify.create import create_external_table
-from spectrify.export import export_to_csv
-from spectrify.transform import transform_table
+from spectrify.convert import ConcurrentManifestConverter
+from spectrify.create import SpectrumTableCreator
+from spectrify.export import RedshiftDataExporter
+from spectrify.transform import TableTransformer
 from spectrify.utils.redshift import ConnectionParameters, get_sa_engine
-from spectrify.utils.schema import get_table_schema
-from spectrify.utils.s3 import paths_from_base_path
+from spectrify.utils.schema import SqlAlchemySchemaReader
+from spectrify.utils.s3 import SimpleS3Config
 
 
 @click.group()
@@ -31,12 +31,13 @@ def cli(ctx, **kwargs):
 @click.argument('s3_path')
 @click.option('--dest-schema', default='spectrum')
 @click.option('--dest-table')
-@click.option('--workers', type=int)
 @click.pass_context
-def transform(ctx, table, s3_path, dest_schema, dest_table, workers):
+def transform(ctx, table, s3_path, dest_schema, dest_table):
     dest_table = dest_table or table
     engine = get_sa_engine(ctx)
-    transform_table(engine, table, s3_path, dest_schema, dest_table, workers)
+    s3_config = SimpleS3Config.from_base_path(s3_path)
+    transformer = TableTransformer(engine, table, s3_config, dest_schema, dest_table)
+    transformer.transform()
 
 
 @cli.command()
@@ -45,20 +46,21 @@ def transform(ctx, table, s3_path, dest_schema, dest_table, workers):
 @click.pass_context
 def export(ctx, table, s3_path):
     engine = get_sa_engine(ctx)
-    s3_csv_path, s3_csv_manifest, s3_spectrum_path = paths_from_base_path(s3_path)
-    export_to_csv(engine, table, s3_csv_path)
+    s3_config = SimpleS3Config.from_base_path(s3_path)
+    RedshiftDataExporter(engine, s3_config).export_to_csv(table)
 
 
 @cli.command()
 @click.argument('table')
 @click.argument('s3_path')
-@click.option('--workers', type=int)
 @click.pass_context
-def convert(ctx, table, s3_path, workers):
+def convert(ctx, table, s3_path):
     engine = get_sa_engine(ctx)
-    sa_table = get_table_schema(engine, table)
-    s3_csv_path, s3_csv_manifest, s3_spectrum_path = paths_from_base_path(s3_path)
-    convert_redshift_manifest_to_parquet(s3_csv_manifest, sa_table, s3_spectrum_path, workers=workers)
+    sa_table = SqlAlchemySchemaReader(engine).get_table_schema(table)
+    s3_config = SimpleS3Config.from_base_path(s3_path)
+
+    converter = ConcurrentManifestConverter(s3_config, sa_table)
+    converter.convert_manifest()
 
 
 @cli.command()
@@ -70,8 +72,19 @@ def convert(ctx, table, s3_path, workers):
 def create_table(ctx, s3_path, source_table, dest_table, dest_schema):
     click.echo('Create Spectrum table')
     engine = get_sa_engine(ctx)
-    sa_table = get_table_schema(engine, source_table)
-    create_external_table(engine, dest_schema, dest_table, sa_table, s3_path)
+    sa_table = SqlAlchemySchemaReader(engine).get_table_schema(source_table)
+    s3_config = SimpleS3Config.from_base_path(s3_path)
+
+    table_creator = SpectrumTableCreator(
+        engine,
+        dest_schema,
+        dest_table,
+        sa_table,
+        s3_config
+    )
+    table_creator.log_query()
+    table_creator.confirm()
+    table_creator.create()
 
 
 @cli.command()
