@@ -1,7 +1,35 @@
 import pyarrow as pa
 import pyarrow.parquet as pq
+import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 
-from spectrify.utils.schema import sa_type_map
+
+def _pa_timestamp_ns():
+    """Wrapper function around Arrow's timestamp type function, which is the
+    only type function that requires an argument...
+    """
+    return pa.timestamp('ns')
+
+
+# A mapping of SqlAlchemy types to Pyarrow types.
+# Spectrify uses the following schema conversion strategy:
+#
+#   Redshift Table Schema (1) --> SqlAlchemy Schema (2) --> Pyarrow Schema (3) --> Parquet (4)
+#
+# The following mapping determines how to go from (2) to (3).
+pyarrow_type_map = {
+    sa.types.BIGINT: pa.int64,
+    sa.types.INTEGER: pa.int32,
+    sa.types.SMALLINT: pa.int16,
+    sa.types.FLOAT: pa.float64,
+    DOUBLE_PRECISION: pa.float64,
+    sa.types.VARCHAR: pa.string,
+    sa.types.NVARCHAR: pa.string,
+    sa.types.CHAR: pa.string,
+    sa.types.BOOLEAN: pa.bool_,
+    sa.types.TIMESTAMP: _pa_timestamp_ns,
+    TIMESTAMP: _pa_timestamp_ns,
+}
 
 
 class Writer:
@@ -11,7 +39,7 @@ class Writer:
     def __init__(self, py_fd, sa_table):
         cols = sa_table.columns
         self.py_fd = py_fd
-        self.col_types = [sa_type_map[col.type.__class__] for col in cols]
+        self.col_types = [pyarrow_type_map[col.type.__class__] for col in cols]
         self.col_names = [col.description for col in cols]
         self.writer = None
 

@@ -1,27 +1,41 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-import click
-
-from spectrify.convert import convert_redshift_manifest_to_parquet
-from spectrify.create import create_external_table
-from spectrify.export import export_to_csv
-from spectrify.utils.schema import get_table_schema
-from spectrify.utils.s3 import paths_from_base_path
+from spectrify.convert import ConcurrentManifestConverter
+from spectrify.create import SpectrumTableCreator
+from spectrify.export import RedshiftDataExporter
+from spectrify.utils.schema import SqlAlchemySchemaReader
 
 
-def transform_table(engine, table_name, s3_base_path, spectrum_schema, spectrum_name, workers):
-    click.echo('transforming!')
+class TableTransformer:
+    def __init__(self, engine, table_name, s3_config, spectrum_schema, spectrum_name):
+        self.engine = engine
+        self.table_name = table_name
+        self.s3_config = s3_config
+        self.spectrum_schema = spectrum_schema
+        self.spectrum_name = spectrum_name
+        self.sa_table = SqlAlchemySchemaReader(engine).get_table_schema(table_name)
 
-    s3_csv_path, s3_manifest, s3_spectrum_path = paths_from_base_path(s3_base_path)
+    def transform(self):
+        self.export_redshift_table()
+        self.convert_csv_data()
+        self.create_spectrum_table()
 
-    # Get schema
-    sa_table = get_table_schema(engine, table_name)
+    def export_redshift_table(self):
+        exporter = RedshiftDataExporter(self.engine, self.s3_config)
+        exporter.export_to_csv(self.table_name)
 
-    # Export
-    s3_manifest = export_to_csv(engine, table_name, s3_csv_path)
+    def convert_csv_data(self):
+        converter = ConcurrentManifestConverter(self.s3_config, self.sa_table)
+        converter.convert_manifest()
 
-    # Convert
-    convert_redshift_manifest_to_parquet(s3_manifest, sa_table, s3_spectrum_path, workers=workers)
-
-    # Add spectrum table
-    create_external_table(engine, spectrum_schema, spectrum_name, sa_table, s3_spectrum_path)
+    def create_spectrum_table(self):
+        table_creator = SpectrumTableCreator(
+            self.engine,
+            self.spectrum_schema,
+            self.spectrum_name,
+            self.sa_table,
+            self.s3_config
+        )
+        table_creator.log_query()
+        table_creator.confirm()
+        table_creator.create()

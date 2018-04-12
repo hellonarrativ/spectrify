@@ -21,23 +21,55 @@ if sys.version_info[0] < 3:
     GzipFile = HackedGzipFile
 
 
-def get_fs():
-    return s3fs.S3FileSystem(anon=False, default_block_size=SPECTRIFY_BLOCKSIZE)
-
-
-def strip_schema(url):
+def _strip_schema(url):
     """Returns the url without the s3:// part"""
     result = urlparse(url)
     return result.netloc + result.path
 
 
-def paths_from_base_path(s3_base_path):
-    # Don't use path, since it might use backlashes on windows.
-    # S3 always wants forward slashes
-    s3_csv_path = '/'.join([s3_base_path, 'csv', ''])
-    s3_csv_manifest = s3_csv_path + 'manifest'
-    s3_spectrum_path = '/'.join([s3_base_path, 'spectrum', ''])
-    return s3_csv_path, s3_csv_manifest, s3_spectrum_path
+class S3Config:
+    """Describes the paths/filenames of the pertinent datafiles"""
+
+    def fs_open(self, *args, **kwargs):
+        return self.get_fs().open(*args, **kwargs)
+
+    def get_fs(self):
+        return s3fs.S3FileSystem(anon=False, default_block_size=SPECTRIFY_BLOCKSIZE)
+
+    def get_manifest_path(self):
+        return NotImplementedError('Must be implemented by subclass')
+
+    def get_csv_dir(self):
+        return NotImplementedError('Must be implemented by subclass')
+
+    def get_spectrum_dir(self):
+        return NotImplementedError('Must be implemented by subclass')
+
+
+class SimpleS3Config(S3Config):
+    """A simple pattern for those who dont already have a data layout"""
+
+    @classmethod
+    def from_base_path(cls, base_path, **kwargs):
+        csv_dir = '/'.join([base_path, 'csv', ''])
+        return cls(
+            csv_dir,
+            '/'.join([base_path, 'spectrum', '']),
+            **kwargs
+        )
+
+    def __init__(self, csv_dir, spectrum_dir):
+        self.csv_dir = csv_dir
+        self.spectrum_dir = spectrum_dir
+
+    def get_manifest_path(self):
+        return self.csv_dir + 'manifest'
+
+    def get_csv_dir(self):
+        return self.csv_dir
+
+    def get_spectrum_dir(self):
+        return self.spectrum_dir
 
 
 class S3GZipCSVReader:
@@ -45,9 +77,8 @@ class S3GZipCSVReader:
         Downloads and decompresses on-the-fly, so the entire file doesn't have
         to be loaded into memory
     """
-    def __init__(self, s3_path, **kwargs):
-        s3 = get_fs()
-        self.s3file = s3.open(strip_schema(s3_path))
+    def __init__(self, s3_config, s3_path, **kwargs):
+        self.s3file = s3_config.fs_open(_strip_schema(s3_path))
         self.gzfile = TextIOWrapper(
             GzipFile(fileobj=self.s3file, mode='rb'),
             encoding='utf-8',
