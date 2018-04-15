@@ -30,3 +30,8 @@ def iso8601_to_nanos(date_str):
     """
     dt = ciso8601.parse_datetime(date_str)
     return unix_time_nanos(dt)
+
+
+def iso8601_to_days_since_epoch(date_str):
+    dt = ciso8601.parse_datetime(date_str)
+    return (dt - epoch).days

@@ -28,6 +28,7 @@ pyarrow_type_map = {
     sa.types.CHAR: pa.string,
     sa.types.BOOLEAN: pa.bool_,
     sa.types.TIMESTAMP: _pa_timestamp_ns,
+    sa.types.DATE: pa.date32,
     TIMESTAMP: _pa_timestamp_ns,
 }
 
