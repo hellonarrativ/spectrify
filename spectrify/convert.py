@@ -7,12 +7,12 @@ import sys
 import csv
 import gc
 import json
-from datetime import datetime
+from datetime import datetime, date
 from os import path, environ
 from multiprocessing import Pool, cpu_count
 
 import click
-from spectrify.utils.timestamps import iso8601_to_nanos
+from spectrify.utils.timestamps import iso8601_to_nanos, iso8601_to_days_since_epoch
 from spectrify.utils.parquet import Writer
 from spectrify.utils.s3 import S3GZipCSVReader
 
@@ -54,6 +54,7 @@ string_converters = {
     float: float,
     bool: postgres_bool_to_python_bool,
     datetime: iso8601_to_nanos,
+    date: iso8601_to_days_since_epoch,  # Actually converts to int via datetime!
 }
 
 if sys.version_info[0] < 3:

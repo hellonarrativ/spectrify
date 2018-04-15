@@ -35,7 +35,6 @@ class SqlAlchemySchemaReader(SchemaReader):
             postgresql_ignore_search_path=True,
             schema=schema_name
         )
-
         for col in table.columns:
             if col.type.__class__ not in pyarrow_type_map:
                 raise ValueError(
