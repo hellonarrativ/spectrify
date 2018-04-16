@@ -21,8 +21,8 @@ requirements = [
     'pyarrow==0.8.0',
     'python-dateutil<2.7.0,>=2.1',
     's3fs',
-    'sqlalchemy<1.2',
-    'sqlalchemy-redshift',
+    'sqlalchemy',
+    'sqlalchemy-redshift>=0.7.1',
 ]
 
 setup_requirements = [
