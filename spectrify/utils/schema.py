@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import sqlalchemy as sa
-from spectrify.utils.parquet import pyarrow_type_map
+from spectrify.utils.parquet import supported_sa_types
 
 
 class SchemaReader:
@@ -36,7 +36,7 @@ class SqlAlchemySchemaReader(SchemaReader):
             schema=schema_name
         )
         for col in table.columns:
-            if col.type.__class__ not in pyarrow_type_map:
+            if col.type.__class__ not in self.get_supported_sa_types():
                 raise ValueError(
                     'Type {} not currently supported by Spectrify. Open an issue?'.format(
                         col.type.__class__
@@ -44,3 +44,7 @@ class SqlAlchemySchemaReader(SchemaReader):
                 )
 
         return table
+
+    def get_supported_sa_types(self):
+        """Override this if you need to implement your own types"""
+        return supported_sa_types
