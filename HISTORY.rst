@@ -2,6 +2,15 @@
 History
 =======
 
+1.0.0 (2018-04-20)
+------------------
+
+* Move functionality into classes to make customizing behavior easier
+* Add support for DATE columns
+* Add support for DECIMAL/NUMERIC columns
+* Upgrade to pyarrow v0.9.0
+
+
 0.4.1 (2018-03-25)
 ------------------
 
