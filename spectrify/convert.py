@@ -8,6 +8,7 @@ import csv
 import gc
 import json
 from datetime import datetime, date
+from decimal import Decimal, Context, setcontext
 from os import path, environ
 from multiprocessing import Pool, cpu_count
 
@@ -15,6 +16,11 @@ import click
 from spectrify.utils.timestamps import iso8601_to_nanos, iso8601_to_days_since_epoch
 from spectrify.utils.parquet import Writer
 from spectrify.utils.s3 import S3GZipCSVReader
+
+# Redshift allows up to 38 bits of decimal/numeric precision. Set the Python
+# decimal context accordingly
+redshift_context = Context(prec=38)
+setcontext(redshift_context)
 
 # This determines the number of rows in each row group of the Parquet file.
 # Larger row group means better compression.
@@ -53,6 +59,7 @@ string_converters = {
     int: int,
     float: float,
     bool: postgres_bool_to_python_bool,
+    Decimal: Decimal,
     datetime: iso8601_to_nanos,
     date: iso8601_to_days_since_epoch,  # Actually converts to int via datetime!
 }

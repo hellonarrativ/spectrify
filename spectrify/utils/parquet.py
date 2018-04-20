@@ -1,3 +1,4 @@
+import functools
 import pyarrow as pa
 import pyarrow.parquet as pq
 import sqlalchemy as sa
@@ -17,19 +18,21 @@ def _pa_timestamp_ns():
 #   Redshift Table Schema (1) --> SqlAlchemy Schema (2) --> Pyarrow Schema (3) --> Parquet (4)
 #
 # The following mapping determines how to go from (2) to (3).
-pyarrow_type_map = {
-    sa.types.BIGINT: pa.int64,
-    sa.types.INTEGER: pa.int32,
-    sa.types.SMALLINT: pa.int16,
-    sa.types.FLOAT: pa.float64,
-    DOUBLE_PRECISION: pa.float64,
-    sa.types.VARCHAR: pa.string,
-    sa.types.NVARCHAR: pa.string,
-    sa.types.CHAR: pa.string,
-    sa.types.BOOLEAN: pa.bool_,
-    sa.types.TIMESTAMP: _pa_timestamp_ns,
-    sa.types.DATE: pa.date32,
-    TIMESTAMP: _pa_timestamp_ns,
+supported_sa_types = {
+    sa.types.SMALLINT,
+    sa.types.INTEGER,
+    sa.types.BIGINT,
+    sa.types.FLOAT,
+    DOUBLE_PRECISION,
+    sa.types.DECIMAL,
+    sa.types.NUMERIC,
+    sa.types.VARCHAR,
+    sa.types.NVARCHAR,
+    sa.types.CHAR,
+    sa.types.BOOLEAN,
+    sa.types.TIMESTAMP,
+    sa.types.DATE,
+    TIMESTAMP,
 }
 
 
@@ -37,10 +40,25 @@ class Writer:
     """Holds onto the Arrow write manager and appropriately deals with
         closing when finished or upon an error
     """
+    pyarrow_type_map = {
+        sa.types.BIGINT: pa.int64,
+        sa.types.INTEGER: pa.int32,
+        sa.types.SMALLINT: pa.int16,
+        sa.types.FLOAT: pa.float64,
+        DOUBLE_PRECISION: pa.float64,
+        sa.types.VARCHAR: pa.string,
+        sa.types.NVARCHAR: pa.string,
+        sa.types.CHAR: pa.string,
+        sa.types.BOOLEAN: pa.bool_,
+        sa.types.TIMESTAMP: _pa_timestamp_ns,
+        sa.types.DATE: pa.date32,
+        TIMESTAMP: _pa_timestamp_ns,
+    }
+
     def __init__(self, py_fd, sa_table):
         cols = sa_table.columns
         self.py_fd = py_fd
-        self.col_types = [pyarrow_type_map[col.type.__class__] for col in cols]
+        self.col_types = self.determine_pyarrow_types(cols)
         self.col_names = [col.description for col in cols]
         self.writer = None
 
@@ -50,6 +68,17 @@ class Writer:
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.writer:
             self.writer.close()
+
+    def determine_pyarrow_types(self, cols):
+        pa_types = []
+        for col in cols:
+            sa_class = col.type.__class__
+            if isinstance(col.type, (sa.types.NUMERIC, sa.types.DECIMAL)):
+                pa_type = functools.partial(pa.decimal128, col.type.precision, col.type.scale)
+            else:
+                pa_type = self.pyarrow_type_map[sa_class]
+            pa_types.append(pa_type)
+        return pa_types
 
     def write_row_group(self, cols):
         """ Write rows (stored in columnar lists) to Parquet file"""
