@@ -78,39 +78,39 @@ Transform Redshift table by performing all 3 steps in sequence:
 Python Usage
 ------------
 
-Currently, you'll have to supply your own SQL Alchemy engine to each of the below commands (pull requests welcome to make this eaiser).
-
 Export to S3:
 
 .. code-block:: python
 
-    from spectrify.export import export_to_csv
-    export_to_csv(sa_engine, table_name, s3_csv_dir)
+
+    from spectrify.export import RedshiftDataExporter
+    RedshiftDataExporter(sa_engine, s3_config).export_to_csv('my_table')
 
 Convert exported CSVs to Parquet:
 
 .. code-block:: python
 
-    from spectrify.convert import convert_redshift_manifest_to_parquet
-    from spectrify.utils.schema import get_table_schema
-    sa_table = get_table_schema(sa_engine, source_table_name)
-    convert_redshift_manifest_to_parquet(s3_csv_manifest_path, sa_table, s3_spectrum_dir)
+    from spectrify.convert import ConcurrentManifestConverter
+    from spectrify.utils.schema import SqlAlchemySchemaReader
+    sa_table = SqlAlchemySchemaReader(engine).get_table_schema('my_table')
+    ConcurrentManifestConverter(sa_table, s3_config).convert_manifest()
 
 Create Spectrum table from S3 parquet folder:
 
 .. code-block:: python
 
-    from spectrify.create import create_external_table
-    from spectrify.utils.schema import get_table_schema
-    sa_table = get_table_schema(sa_engine, source_table_name)
-    create_external_table(sa_engine, dest_schema, dest_table_name, sa_table, s3_spectrum_path)
+    from spectrify.create import SpectrumTableCreator
+    from spectrify.utils.schema import SqlAlchemySchemaReader
+    sa_table = SqlAlchemySchemaReader(engine).get_table_schema('my_table')
+    SpectrumTableCreator(sa_engine, dest_schema, dest_table_name, sa_table, s3_config).create()
 
 Transform Redshift table by performing all 3 steps in sequence:
 
 .. code-block:: python
 
-    from spectrify.transform import transform_table
-    transform_table(sa_engine, table_name, s3_base_path, dest_schema, dest_table, num_workers)
+    from spectrify.transform import TableTransformer
+    transformer = TableTransformer(engine, 'my_table', s3_config, dest_schema, dest_table_name)
+    transformer.transform()
 
 Contribute
 ----------

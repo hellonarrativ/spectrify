@@ -25,7 +25,7 @@ class TableTransformer:
         exporter.export_to_csv(self.table_name)
 
     def convert_csv_data(self):
-        converter = ConcurrentManifestConverter(self.s3_config, self.sa_table)
+        converter = ConcurrentManifestConverter(self.sa_table, self.s3_config)
         converter.convert_manifest()
 
     def create_spectrum_table(self):

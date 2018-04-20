@@ -12,34 +12,15 @@ def _pa_timestamp_ns():
     return pa.timestamp('ns')
 
 
-# A mapping of SqlAlchemy types to Pyarrow types.
-# Spectrify uses the following schema conversion strategy:
-#
-#   Redshift Table Schema (1) --> SqlAlchemy Schema (2) --> Pyarrow Schema (3) --> Parquet (4)
-#
-# The following mapping determines how to go from (2) to (3).
-supported_sa_types = {
-    sa.types.SMALLINT,
-    sa.types.INTEGER,
-    sa.types.BIGINT,
-    sa.types.FLOAT,
-    DOUBLE_PRECISION,
-    sa.types.DECIMAL,
-    sa.types.NUMERIC,
-    sa.types.VARCHAR,
-    sa.types.NVARCHAR,
-    sa.types.CHAR,
-    sa.types.BOOLEAN,
-    sa.types.TIMESTAMP,
-    sa.types.DATE,
-    TIMESTAMP,
-}
-
-
 class Writer:
-    """Holds onto the Arrow write manager and appropriately deals with
-        closing when finished or upon an error
-    """
+    """Writes a Parquet file using Apache Arrow"""
+
+    # A mapping of SqlAlchemy types to Pyarrow types.
+    # Spectrify uses the following schema conversion strategy:
+    #
+    #   Redshift Table Schema (1) --> SqlAlchemy Schema (2) --> Pyarrow Schema (3) --> Parquet (4)
+    #
+    # The following mapping determines how to go from (2) to (3).
     pyarrow_type_map = {
         sa.types.BIGINT: pa.int64,
         sa.types.INTEGER: pa.int32,
@@ -54,6 +35,7 @@ class Writer:
         sa.types.DATE: pa.date32,
         TIMESTAMP: _pa_timestamp_ns,
     }
+    supported_sa_types = set(pyarrow_type_map.keys()).union({sa.types.DECIMAL, sa.types.NUMERIC})
 
     def __init__(self, py_fd, sa_table):
         cols = sa_table.columns

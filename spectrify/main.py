@@ -59,7 +59,7 @@ def convert(ctx, table, s3_path):
     sa_table = SqlAlchemySchemaReader(engine).get_table_schema(table)
     s3_config = SimpleS3Config.from_base_path(s3_path)
 
-    converter = ConcurrentManifestConverter(s3_config, sa_table)
+    converter = ConcurrentManifestConverter(sa_table, s3_config)
     converter.convert_manifest()
 
 

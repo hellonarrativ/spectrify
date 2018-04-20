@@ -73,9 +73,9 @@ if sys.version_info[0] < 3:
 
 
 class CsvConverter:
-    def __init__(self, s3_config, sa_table, **kwargs):
-        self.s3_config = s3_config
+    def __init__(self, sa_table, s3_config, **kwargs):
         self.sa_table = sa_table
+        self.s3_config = s3_config
         self.kwargs = kwargs
 
     def log(self, msg):
@@ -191,7 +191,7 @@ class _PoolManager(object):
 
 def _parallel_wrapper(arg_tuple):
     data_path, sa_table, s3_config = arg_tuple
-    CsvConverter(s3_config, sa_table).convert_csv(data_path)
+    CsvConverter(sa_table, s3_config).convert_csv(data_path)
 
 
 class ConcurrentManifestConverter(CsvConverter):
