@@ -18,7 +18,7 @@ requirements = [
     'future',
     'pandas',
     'psycopg2',
-    'pyarrow==0.9.0',
+    'pyarrow==0.9.0.post1',
     'python-dateutil<2.7.0,>=2.1',
     's3fs',
     'sqlalchemy',
