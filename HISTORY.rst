@@ -2,6 +2,14 @@
 History
 =======
 
+1.0.1 (2018-07-12)
+------------------
+
+* Loosen version requirement for PyArrow
+* Add example script
+* Update documentation
+
+
 1.0.0 (2018-04-20)
 ------------------
 
