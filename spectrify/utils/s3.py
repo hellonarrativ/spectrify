@@ -84,7 +84,7 @@ class S3GZipCSVReader:
             encoding='utf-8',
             newline='',
         )
-        self.reader = csv.reader(self.gzfile, **kwargs)
+        self.reader = get_csv_reader(self.gzfile, **kwargs)
 
     def __enter__(self):
         return self
@@ -101,3 +101,10 @@ class S3GZipCSVReader:
     def close(self):
         self.gzfile.close()
         self.s3file.close()
+
+
+def get_csv_reader(iterable, **kwargs):
+    if sys.version_info[0] < 3:
+        return csv.reader((row.encode('utf-8') for row in iterable), **kwargs)
+
+    return csv.reader(iterable, **kwargs)
