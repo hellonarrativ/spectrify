@@ -8,6 +8,8 @@ from gzip import GzipFile
 from io import TextIOWrapper
 from urllib.parse import urlparse
 
+import unicodecsv
+
 import s3fs
 
 SPECTRIFY_BLOCKSIZE = 50 * 2**20  # 50MB
@@ -77,14 +79,14 @@ class S3GZipCSVReader:
         Downloads and decompresses on-the-fly, so the entire file doesn't have
         to be loaded into memory
     """
-    def __init__(self, s3_config, s3_path, **kwargs):
+    def __init__(self, s3_config, s3_path, unicode_csv, **kwargs):
         self.s3file = s3_config.fs_open(_strip_schema(s3_path))
         self.gzfile = TextIOWrapper(
             GzipFile(fileobj=self.s3file, mode='rb'),
             encoding='utf-8',
             newline='',
         )
-        self.reader = get_csv_reader(self.gzfile, **kwargs)
+        self.reader = get_csv_reader(self.gzfile, unicode_csv, **kwargs)
 
     def __enter__(self):
         return self
@@ -103,8 +105,14 @@ class S3GZipCSVReader:
         self.s3file.close()
 
 
-def get_csv_reader(iterable, **kwargs):
-    if sys.version_info[0] < 3:
-        return csv.reader((row.encode('utf-8') for row in iterable), **kwargs)
+def get_csv_reader(iterable, unicode_csv, **kwargs):
+    # The csv module works fine with unicode on Python 3, we will use `unicodecsv` only for Python2.
+    if unicode_csv and sys.version_info.major == 2:
+        return unicodecsv.reader(_encode_rows_to_utf8(iterable), **kwargs)
 
     return csv.reader(iterable, **kwargs)
+
+
+def _encode_rows_to_utf8(iterable):
+    for row in iterable:
+        yield row.encode("utf-8")

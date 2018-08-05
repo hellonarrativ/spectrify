@@ -9,7 +9,7 @@ import gc
 import json
 from datetime import datetime, date
 from decimal import Decimal, Context, setcontext
-from os import path, environ
+from os import path, environ, getenv
 from multiprocessing import Pool, cpu_count
 
 import click
@@ -29,6 +29,13 @@ setcontext(redshift_context)
 # Actual memory usage will be some multiple of that, since multiple copies
 # are required in memory for processing.
 SPECTRIFY_ROWS_PER_GROUP = environ.get('SPECTRIFY_ROWS_PER_GROUP') or 250000
+
+# Python2 csv builtin library has limited support with unicode CSVs
+# (see: https://github.com/hellonarrativ/spectrify/issues/16).
+# Therefore, there is an option to replace the builtin csv module with `unicodecsv` module.
+# By default this option is disabled - `unicodecsv` can have a pretty serious performance
+# impact.
+SPECTRIFY_USE_UNICODE_CSV = bool(getenv("SPECTRIFY_USE_UNICODE_CSV")) or False
 
 # These are the values Redshift uses for true/false in its CSVs
 POSTGRES_TRUE_VAL = 't'
@@ -68,17 +75,19 @@ if sys.version_info[0] < 3:
     string_converters.update({
         int: long,
         long: long,
-        str: lambda s: unicode(s, encoding='utf-8'),
+        str: unicode,
     })
 
 
 class CsvConverter:
-    def __init__(self, sa_table, s3_config, delimiter='|', escapechar='\\', quoting=csv.QUOTE_NONE, **kwargs):
+    def __init__(self, sa_table, s3_config, delimiter='|', escapechar='\\', quoting=csv.QUOTE_NONE,
+                 unicode_csv=SPECTRIFY_USE_UNICODE_CSV, **kwargs):
         self.sa_table = sa_table
         self.s3_config = s3_config
         self.delimiter = delimiter
         self.escapechar = escapechar
         self.quoting = quoting
+        self.unicode_csv = unicode_csv
         self.kwargs = kwargs
 
     def log(self, msg):
@@ -179,7 +188,8 @@ class CsvConverter:
             data_path,
             delimiter=self.delimiter,
             escapechar=self.escapechar,
-            quoting=self.quoting
+            quoting=self.quoting,
+            unicode_csv=self.unicode_csv
         )
 
 
@@ -201,8 +211,8 @@ class _PoolManager(object):
 
 
 def _parallel_wrapper(arg_tuple):
-    data_path, sa_table, s3_config, delimiter, escapechar, quoting = arg_tuple
-    CsvConverter(sa_table, s3_config, delimiter, escapechar, quoting).convert_csv(data_path)
+    data_path, sa_table, s3_config, delimiter, escapechar, quoting, unicode_csv = arg_tuple
+    CsvConverter(sa_table, s3_config, delimiter, escapechar, quoting, unicode_csv).convert_csv(data_path)
 
 
 class ConcurrentManifestConverter(CsvConverter):
@@ -212,7 +222,7 @@ class ConcurrentManifestConverter(CsvConverter):
         num_workers = self.kwargs.get('num_workers') or cpu_count()
         manifest = self.get_manifest()
         convert_args = [
-            (entry['url'], self.sa_table, self.s3_config, self.delimiter, self.escapechar, self.quoting)
+            (entry['url'], self.sa_table, self.s3_config, self.delimiter, self.escapechar, self.quoting, self.unicode_csv)
             for entry in manifest['entries']
         ]
 
