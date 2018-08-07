@@ -68,7 +68,7 @@ if sys.version_info[0] < 3:
     string_converters.update({
         int: long,
         long: long,
-        str: unicode,
+        str: lambda s: unicode(s, encoding='utf-8'),
     })
 
 
