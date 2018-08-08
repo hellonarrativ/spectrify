@@ -15,7 +15,7 @@ requirements = [
     'boto3',
     'ciso8601',
     'Click',
-    'cython',
+    'Cython',
     'future',
     'pandas',
     'psycopg2',
