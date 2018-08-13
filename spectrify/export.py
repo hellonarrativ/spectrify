@@ -12,7 +12,7 @@ class RedshiftDataExporter:
     to %(s3_path)s
     CREDENTIALS %(credentials)s
     ESCAPE MANIFEST GZIP ALLOWOVERWRITE
-    MAXFILESIZE 1 gb;
+    MAXFILESIZE 256 mb;
     """
 
     def __init__(self, sa_engine, s3_config):
