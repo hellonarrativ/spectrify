@@ -73,9 +73,12 @@ if sys.version_info[0] < 3:
 
 
 class CsvConverter:
-    def __init__(self, sa_table, s3_config, **kwargs):
+    def __init__(self, sa_table, s3_config, delimiter='|', escapechar='\\', quoting=csv.QUOTE_NONE, **kwargs):
         self.sa_table = sa_table
         self.s3_config = s3_config
+        self.delimiter = delimiter
+        self.escapechar = escapechar
+        self.quoting = quoting
         self.kwargs = kwargs
 
     def log(self, msg):
@@ -141,8 +144,7 @@ class CsvConverter:
         # An array of functions corresponding to the CSV columns that take a string and return the
         # corresponding Python datatype
         type_converters = self.table_to_conversion_funcs(sa_table)
-
-        with S3GZipCSVReader(self.s3_config, data_path, delimiter='|', escapechar='\\', quoting=csv.QUOTE_NONE) as reader:
+        with self.get_csv_reader(data_path) as reader:
             num_cols = len(sa_table.columns)
             col_indices = range(num_cols)
             data = [list() for i in range(num_cols)]
@@ -171,6 +173,15 @@ class CsvConverter:
         cols = sa_table.columns
         return [string_converters.get(col.type.python_type) for col in cols]
 
+    def get_csv_reader(self, data_path):
+        return S3GZipCSVReader(
+            self.s3_config,
+            data_path,
+            delimiter=self.delimiter,
+            escapechar=self.escapechar,
+            quoting=self.quoting
+        )
+
 
 class _PoolManager(object):
     """Pool in Python 2 doesn't act as a context manager. So just make one here"""
@@ -190,8 +201,8 @@ class _PoolManager(object):
 
 
 def _parallel_wrapper(arg_tuple):
-    data_path, sa_table, s3_config = arg_tuple
-    CsvConverter(sa_table, s3_config).convert_csv(data_path)
+    data_path, sa_table, s3_config, delimiter, escapechar, quoting = arg_tuple
+    CsvConverter(sa_table, s3_config, delimiter, escapechar, quoting).convert_csv(data_path)
 
 
 class ConcurrentManifestConverter(CsvConverter):
@@ -200,7 +211,10 @@ class ConcurrentManifestConverter(CsvConverter):
     def convert_manifest(self):
         num_workers = self.kwargs.get('num_workers') or cpu_count()
         manifest = self.get_manifest()
-        convert_args = [(entry['url'], self.sa_table, self.s3_config) for entry in manifest['entries']]
+        convert_args = [
+            (entry['url'], self.sa_table, self.s3_config, self.delimiter, self.escapechar, self.quoting)
+            for entry in manifest['entries']
+        ]
 
         with _PoolManager(num_workers) as pool:
             pool.map(_parallel_wrapper, convert_args, chunksize=1)
