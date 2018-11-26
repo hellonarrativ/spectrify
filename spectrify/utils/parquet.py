@@ -26,6 +26,7 @@ class Writer:
         sa.types.INTEGER: pa.int32,
         sa.types.SMALLINT: pa.int16,
         sa.types.FLOAT: pa.float64,
+        sa.types.REAL: pa.float32,
         DOUBLE_PRECISION: pa.float64,
         sa.types.VARCHAR: pa.string,
         sa.types.NVARCHAR: pa.string,
