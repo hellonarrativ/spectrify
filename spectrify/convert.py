@@ -7,6 +7,9 @@ import sys
 import csv
 import gc
 import json
+import itertools
+import collections
+import six
 from datetime import datetime, date
 from decimal import Decimal, Context, setcontext
 from os import path, environ
@@ -49,6 +52,23 @@ def postgres_bool_to_python_bool(val):
     return None
 
 
+def _to_iterable(iterable_or_val):
+    """
+    Wraps the passed in val in an iterable if it is not already in one
+    :param iterable_or_val: A value or an iterable
+    :type: Union[Iterable[T], T]
+    :return: Iterable[T]
+    """
+    is_iterable = isinstance(iterable_or_val, collections.Iterable) \
+                  and not isinstance(iterable_or_val, six.string_types) \
+                  and not isinstance(iterable_or_val, six.binary_type)
+
+    if is_iterable:
+        return iterable_or_val
+    else:
+        return [iterable_or_val]
+
+
 """ The CSV reader passes in strings, and we want to convert them to various
 Arrow/Parquet types.  Unfortunately Arrow doesn't know how to convert from
 string directly to those types.  The functions below will convert a string
@@ -89,15 +109,28 @@ class CsvConverter:
         with self.s3_config.fs_open(self.s3_config.get_manifest_path()) as manifest_file:
             return json.loads(manifest_file.read().decode('utf-8'))
 
+    def get_out_filename(self, file_paths):
+        filenames = [
+            path.splitext(path.basename(file_path))[0] for file_path in file_paths
+        ]
+        out_file_name = "-".join(filenames)
+        return out_file_name
+
     def convert_csv(self, file_path):
-        """Converts an individual datafile on S3 to parquet"""
-        filename, ext = path.splitext(path.basename(file_path))
+        """
+        Converts a set of csv datafiles on S3 to a single parquet output file on S3
+        :param file_path: Either a single string filepath or an iterable of filepaths
+        :type: Union[str, Iterable[str]]
+        :return: None
+        """
+        file_paths = _to_iterable(file_path)
         out_dir = self.s3_config.get_spectrum_dir()
-        out_path = path.join(out_dir, filename)
+        out_filename = self.get_out_filename(file_paths)
+        out_path = path.join(out_dir, out_filename)
         if not out_path.endswith('.parq'):
             out_path += '.parq'
 
-        self.log('Converting file [%s] to [%s]' % (file_path, out_path))
+        self.log('Converting files [%s] to [%s]' % (file_paths, out_path))
 
         with self.s3_config.fs_open(out_path, 'wb') as s3_file:
             with Writer(s3_file, self.sa_table) as writer:
@@ -108,10 +141,13 @@ class CsvConverter:
                 #
                 # Assuming those issues have solutions, using Pandas would probably be much more
                 # efficient in terms of CPU and memory.
-                for chunk in self.columnar_data_chunks(file_path, self.sa_table, SPECTRIFY_ROWS_PER_GROUP):
+                reader = itertools.chain.from_iterable(
+                    self.get_csv_reader(file_path) for file_path in file_paths
+                )
+                for chunk in self.columnar_data_chunks(reader, self.sa_table, SPECTRIFY_ROWS_PER_GROUP):
                     writer.write_row_group(chunk)
 
-        self.log('Done converting file [%s] to [%s]' % (file_path, out_path))
+        self.log('Done converting file [%s] to [%s]' % (file_paths, out_path))
 
     def _clear_and_collect(self, data):
         for col in data:
@@ -134,7 +170,7 @@ class CsvConverter:
             value = py_type(value)
         return value
 
-    def columnar_data_chunks(self, data_path, sa_table, chunk_size):
+    def columnar_data_chunks(self, reader, sa_table, chunk_size):
         """A generator function that returns chunk_size rows (or whatever is left
         at the end of the file) in columnar format
         This function also performs conversion from string to python datatype based on the given
@@ -144,30 +180,29 @@ class CsvConverter:
         # An array of functions corresponding to the CSV columns that take a string and return the
         # corresponding Python datatype
         type_converters = self.table_to_conversion_funcs(sa_table)
-        with self.get_csv_reader(data_path) as reader:
-            num_cols = len(sa_table.columns)
-            col_indices = range(num_cols)
-            data = [list() for i in range(num_cols)]
+        num_cols = len(sa_table.columns)
+        col_indices = range(num_cols)
+        data = [list() for i in range(num_cols)]
 
-            # Read in CSV and store it by column (makes passing to Arrow easier)
-            for row in reader:
-                # read a row
-                for i in col_indices:
-                    value = row[i]
-                    py_type = type_converters[i]
+        # Read in CSV and store it by column (makes passing to Arrow easier)
+        for row in reader:
+            # read a row
+            for i in col_indices:
+                value = row[i]
+                py_type = type_converters[i]
 
-                    value = self._convert_to_type(value, py_type)
-                    data[i].append(value)
+                value = self._convert_to_type(value, py_type)
+                data[i].append(value)
 
-                if len(data[0]) == chunk_size:
-                    yield data
-                    self._clear_and_collect(data)
-
-            # Number of rows in file is not necessarily divisible by chunk_size
-            # So make sure there isn't any lingering data to process
-            if data[0]:
+            if len(data[0]) == chunk_size:
                 yield data
                 self._clear_and_collect(data)
+
+        # Number of rows in file is not necessarily divisible by chunk_size
+        # So make sure there isn't any lingering data to process
+        if data[0]:
+            yield data
+            self._clear_and_collect(data)
 
     def table_to_conversion_funcs(self, sa_table):
         cols = sa_table.columns
@@ -200,16 +235,23 @@ class _PoolManager(object):
         self.pool.join()
 
 
-def _parallel_wrapper(arg_tuple):
-    data_path, sa_table, s3_config, delimiter, escapechar, quoting = arg_tuple
-    CsvConverter(sa_table, s3_config, delimiter, escapechar, quoting).convert_csv(data_path)
+def _parallel_wrapper(arg_tuples):
+    _, sa_table, s3_config, delimiter, escapechar, quoting = arg_tuples[0]
+    data_paths = [arg_tuple[0] for arg_tuple in arg_tuples]
+    CsvConverter(sa_table, s3_config, delimiter, escapechar, quoting).convert_csv(data_paths)
 
 
 class ConcurrentManifestConverter(CsvConverter):
     """Converts CSV files concurrently using a multiprocessing pool."""
 
+    @staticmethod
+    def _chunks(l, n):
+        for i in range(0, len(l), n):
+            yield l[i:i + n]
+
     def convert_manifest(self):
         num_workers = self.kwargs.get('num_workers') or cpu_count()
+        chunk_size = self.kwargs.get('chunk_size') or 1
         manifest = self.get_manifest()
         convert_args = [
             (entry['url'], self.sa_table, self.s3_config, self.delimiter, self.escapechar, self.quoting)
@@ -217,7 +259,8 @@ class ConcurrentManifestConverter(CsvConverter):
         ]
 
         with _PoolManager(num_workers) as pool:
-            pool.map(_parallel_wrapper, convert_args, chunksize=1)
+            chunked_args = self._chunks(convert_args, chunk_size)
+            pool.map(_parallel_wrapper, chunked_args)
 
 
 class SimpleManifestConverter(CsvConverter):

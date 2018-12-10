@@ -4,11 +4,12 @@ import copy
 import csv
 import gzip
 import sys
+import tempfile
 
 import sqlalchemy
 
 from spectrify.convert import CsvConverter
-from spectrify.utils.s3 import SimpleS3Config
+from spectrify.utils.s3 import SimpleS3Config, S3GZipCSVReader
 
 def get_stream(stream):
     if sys.version_info[0] < 3:
@@ -66,15 +67,18 @@ class TestCsvConverter(TestCase):
             csv_dir="",
             spectrum_dir=""
         )
+
         csv_converter = CsvConverter(sa_table, s3_config, delimiter=delimiter, quoting=quoting)
+        reader = S3GZipCSVReader(s3_config, "")
         columnar_data_chunks = [
             copy.deepcopy(row)
             for row in csv_converter.columnar_data_chunks(
-                data_path="",
+                reader=reader,
                 sa_table=sa_table,
                 chunk_size=1
             )
         ]
+        print(columnar_data_chunks)
         self.assertEqual(
             [
                 [[1], [2], [3], [4]],
@@ -84,6 +88,96 @@ class TestCsvConverter(TestCase):
             ],
             columnar_data_chunks
         )
+
+    def test_convert_csv_single_file(self):
+        delimiter = ","
+        quoting = csv.QUOTE_ALL
+        sa_meta = sqlalchemy.MetaData()
+        data = [
+            ['1', '2', '3', '4'],
+            ['1', '2', '3', '4'],
+            ['1', '2', '3', '4'],
+            ['1', '2', '3', '4'],
+        ]
+        sa_table = sqlalchemy.Table(
+            'unit_test_table',
+            sa_meta,
+            sqlalchemy.Column('int_col_1', sqlalchemy.INTEGER),
+            sqlalchemy.Column('int_col_2', sqlalchemy.INTEGER),
+            sqlalchemy.Column('int_col_3', sqlalchemy.INTEGER),
+            sqlalchemy.Column('int_col_4', sqlalchemy.INTEGER),
+        )
+
+        s3_config = FakeSimpleS3Config(
+            data,
+            delimiter=delimiter,
+            quoting=quoting,
+            csv_dir="",
+            spectrum_dir=""
+        )
+        with tempfile.NamedTemporaryFile("wb", delete=False) as parquet_output:
+            def fs_open(*args, **kwargs):
+                if any(".parq" in arg for arg in args):
+                    return parquet_output
+                else:
+                    s3_config._gzip_csv.seek(0)
+                    return s3_config._gzip_csv
+            s3_config.fs_open = fs_open
+
+            csv_converter = CsvConverter(sa_table, s3_config, delimiter=delimiter, quoting=quoting)
+
+            csv_converter.convert_csv("file_1.csv")
+            with open(parquet_output.name, "rb") as f:
+                num_lines = 0
+                for _ in f:
+                    num_lines += 1
+
+                assert num_lines > 0
+
+    def test_convert_csv_multiple_files(self):
+        delimiter = ","
+        quoting = csv.QUOTE_ALL
+        sa_meta = sqlalchemy.MetaData()
+        data = [
+            ['1', '2', '3', '4'],
+            ['1', '2', '3', '4'],
+            ['1', '2', '3', '4'],
+            ['1', '2', '3', '4'],
+        ]
+        sa_table = sqlalchemy.Table(
+            'unit_test_table',
+            sa_meta,
+            sqlalchemy.Column('int_col_1', sqlalchemy.INTEGER),
+            sqlalchemy.Column('int_col_2', sqlalchemy.INTEGER),
+            sqlalchemy.Column('int_col_3', sqlalchemy.INTEGER),
+            sqlalchemy.Column('int_col_4', sqlalchemy.INTEGER),
+        )
+
+        s3_config = FakeSimpleS3Config(
+            data,
+            delimiter=delimiter,
+            quoting=quoting,
+            csv_dir="",
+            spectrum_dir=""
+        )
+        with tempfile.NamedTemporaryFile("wb", delete=False) as parquet_output:
+            def fs_open(*args, **kwargs):
+                if any(".parq" in arg for arg in args):
+                    return parquet_output
+                else:
+                    s3_config._gzip_csv.seek(0)
+                    return s3_config._gzip_csv
+            s3_config.fs_open = fs_open
+
+            csv_converter = CsvConverter(sa_table, s3_config, delimiter=delimiter, quoting=quoting)
+
+            csv_converter.convert_csv(["file_1.csv", "file_2.csv"])
+            with open(parquet_output.name, "rb") as f:
+                num_lines = 0
+                for _ in f:
+                    num_lines += 1
+
+                assert num_lines > 0
 
 
 if __name__ == "__main__":
