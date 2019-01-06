@@ -23,6 +23,7 @@ requirements = [
     's3fs',
     'sqlalchemy',
     'sqlalchemy-redshift>=0.7.1',
+    'unicodecsv'
 ]
 
 setup_requirements = [
