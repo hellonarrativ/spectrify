@@ -30,6 +30,7 @@ class TestParquetWriter(TestCase):
     def setUp(self):
         self.sa_meta = sa.MetaData()
         self.data = [
+            [17.124, 1.12, 3.14, 13.37],
             [1, 2, 3, 4],
             [1, 2, 3, 4],
             [1, 2, 3, 4],
@@ -43,6 +44,7 @@ class TestParquetWriter(TestCase):
         self.table = sa.Table(
             'unit_test_table',
             self.sa_meta,
+            sa.Column('real_col', sa.REAL),
             sa.Column('bigint_col', sa.BIGINT),
             sa.Column('int_col', sa.INTEGER),
             sa.Column('smallint_col', sa.SMALLINT),
@@ -52,6 +54,7 @@ class TestParquetWriter(TestCase):
         )
 
         self.expected_datatypes = [
+            pa.float32(),
             pa.int64(),
             pa.int32(),
             pa.int16(),
@@ -74,7 +77,12 @@ class TestParquetWriter(TestCase):
             # Verify data
             parq_table = pq.read_table(infile)
             written_data = list(parq_table.to_pydict().values())
-            self.assertEqual(self.data, written_data)
+
+            tuples_by_data_type = zip(self.data, written_data)
+            for i in tuples_by_data_type:
+                tuples_by_order = zip(i[0], i[1])
+                for j in tuples_by_order:
+                    self.assertAlmostEquals(j[0], j[1], places=5)
 
             # Verify parquet file schema
             for i, field in enumerate(parq_table.schema):
