@@ -2,6 +2,16 @@
 History
 =======
 
+2.0.0 (2019-03-09)
+------------------
+
+* Default to 256MB files
+* Flag for unicode support on Python 2.7 (performance implications)
+* Drop support for Python 3.4
+* Support for additional CSV format parameters
+* Support for REAL data type
+
+
 1.0.1 (2018-07-12)
 ------------------
 
