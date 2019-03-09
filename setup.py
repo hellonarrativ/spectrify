@@ -37,7 +37,7 @@ test_requirements = [
 
 setup(
     name='spectrify',
-    version='1.0.1',
+    version='2.0.0',
     description="Tools for working with Redshift Spectrum.",
     long_description=readme + '\n\n' + history,
     author="The Narrativ Company, Inc.",
