@@ -48,28 +48,28 @@ Command-line Usage
 
 Export Redshift table `my_table` to a folder of CSV files on S3:
 
-.. code-block::
+.. code-block:: bash
 
     $ spectrify --host=example-url.redshift.aws.com --user=myuser --db=mydb export my_table \
         's3://example-bucket/my_table'
 
 Convert exported CSVs to Parquet:
 
-.. code-block::
+.. code-block:: bash
 
     $ spectrify --host=example-url.redshift.aws.com --user=myuser --db=mydb convert my_table \
         's3://example-bucket/my_table'
 
 Create Spectrum table from S3 folder:
 
-.. code-block::
+.. code-block:: bash
 
     $ spectrify --host=example-url.redshift.aws.com --user=myuser --db=mydb create_table \
         's3://example-bucket/my_table' my_table my_spectrum_table
 
 Transform Redshift table by performing all 3 steps in sequence:
 
-.. code-block::
+.. code-block:: bash
 
     $ spectrify --host=example-url.redshift.aws.com --user=myuser --db=mydb transform my_table \
         's3://example-bucket/my_table'
