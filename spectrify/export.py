@@ -12,6 +12,7 @@ class RedshiftDataExporter:
     to %(s3_path)s
     CREDENTIALS %(credentials)s
     ESCAPE MANIFEST GZIP ALLOWOVERWRITE
+    REGION 'us-east-1'
     MAXFILESIZE 256 mb;
     """
 
