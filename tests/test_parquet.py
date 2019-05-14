@@ -40,6 +40,7 @@ class TestParquetWriter(TestCase):
              None,
              datetime(2006, 1, 13, 12, 34, 56, 432539),
              datetime(2010, 8, 13, 5, 46, 57, 437699), ],
+            ["Test Text", "Some#More#Test#  Text", "!@#$%%^&*&", None],
         ]
         self.table = sa.Table(
             'unit_test_table',
@@ -51,6 +52,7 @@ class TestParquetWriter(TestCase):
             sa.Column('bool_col', sa.BOOLEAN),
             sa.Column('str_col', sa.VARCHAR),
             sa.Column('timestamp_col', sa.TIMESTAMP),
+            sa.Column('plaintext_col', sa.TEXT),
         )
 
         self.expected_datatypes = [
@@ -61,6 +63,7 @@ class TestParquetWriter(TestCase):
             pa.bool_(),
             pa.string(),
             pa.timestamp('ns'),
+            pa.string(),
         ]
 
     def test_write(self):
