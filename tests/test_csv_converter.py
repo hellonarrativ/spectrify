@@ -10,6 +10,7 @@ import sqlalchemy
 from spectrify.convert import CsvConverter
 from spectrify.utils.s3 import SimpleS3Config
 
+
 def get_stream(stream):
     if sys.version_info[0] < 3:
         return stream

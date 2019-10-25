@@ -12,6 +12,7 @@ type_map = {
     DOUBLE_PRECISION: types.FLOAT,  # Replace postgres-specific with more generic
 }
 
+
 class TableCreator(object):
     __metaclass__ = abc.ABCMeta
 
