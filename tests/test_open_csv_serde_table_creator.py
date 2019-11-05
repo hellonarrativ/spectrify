@@ -25,7 +25,7 @@ class TestOpenCSVSerdeTableCreator(TestCase):
                 'compression_type'='gzip'
             );
         """
-        s3_config = SimpleS3Config.from_base_path("s3://some_bucket/prefix")
+        s3_config = SimpleS3Config.from_base_path("s3://some_bucket/prefix", "eu-west-1")
         sa_meta = sqlalchemy.MetaData()
         sa_table = sqlalchemy.Table(
             'unit_test_table',

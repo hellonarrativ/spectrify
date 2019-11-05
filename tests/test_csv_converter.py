@@ -65,7 +65,8 @@ class TestCsvConverter(TestCase):
             delimiter=delimiter,
             quoting=quoting,
             csv_dir="",
-            spectrum_dir=""
+            spectrum_dir="",
+            region=""
         )
         csv_converter = CsvConverter(sa_table, s3_config, delimiter=delimiter, quoting=quoting)
         columnar_data_chunks = [

@@ -8,10 +8,11 @@ import click
 
 class RedshiftDataExporter:
     UNLOAD_QUERY = """
-    UNLOAD ('select * from {}')
+    UNLOAD ('select * from {table_name}')
     to %(s3_path)s
     CREDENTIALS %(credentials)s
     ESCAPE MANIFEST GZIP ALLOWOVERWRITE
+    {region_config}
     MAXFILESIZE 256 mb;
     """
 
@@ -33,7 +34,12 @@ class RedshiftDataExporter:
             click.echo('Done.')
 
     def get_query(self, table_name):
-        return self.UNLOAD_QUERY.format(table_name)
+        region_config = ''
+        if self.s3_config.get_bucket_region():
+            region_config = 'REGION \'{}\''.format(self.s3_config.get_bucket_region())
+        return self.UNLOAD_QUERY.format(
+            table_name=table_name,
+            region_config=region_config)
 
     def get_credentials(self):
         session = boto3.Session()
