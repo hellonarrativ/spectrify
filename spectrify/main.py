@@ -73,7 +73,7 @@ def create_table(ctx, s3_path, source_table, dest_table, dest_schema):
     click.echo('Create Spectrum table')
     engine = get_sa_engine(ctx)
     sa_table = SqlAlchemySchemaReader(engine).get_table_schema(source_table)
-    s3_config = SimpleS3Config(None, s3_path)
+    s3_config = SimpleS3Config.from_base_path(s3_path)
 
     table_creator = SpectrumTableCreator(
         engine,
