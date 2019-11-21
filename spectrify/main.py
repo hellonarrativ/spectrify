@@ -36,7 +36,7 @@ def cli(ctx, **kwargs):
 def transform(ctx, table, s3_path, dest_schema, dest_table, s3_region):
     dest_table = dest_table or table
     engine = get_sa_engine(ctx)
-    s3_config = SimpleS3Config.from_base_path(s3_path, s3_region)
+    s3_config = SimpleS3Config.from_base_path(s3_path, region=s3_region)
     transformer = TableTransformer(engine, table, s3_config, dest_schema, dest_table)
     transformer.transform()
 
@@ -48,7 +48,7 @@ def transform(ctx, table, s3_path, dest_schema, dest_table, s3_region):
 @click.pass_context
 def export(ctx, table, s3_path, s3_region):
     engine = get_sa_engine(ctx)
-    s3_config = SimpleS3Config.from_base_path(s3_path, s3_region)
+    s3_config = SimpleS3Config.from_base_path(s3_path, region=s3_region)
     RedshiftDataExporter(engine, s3_config).export_to_csv(table)
 
 

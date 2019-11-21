@@ -52,19 +52,18 @@ class SimpleS3Config(S3Config):
     """A simple pattern for those who dont already have a data layout"""
 
     @classmethod
-    def from_base_path(cls, base_path, region, **kwargs):
+    def from_base_path(cls, base_path, **kwargs):
         csv_dir = '/'.join([base_path, 'csv', ''])
         return cls(
             csv_dir,
             '/'.join([base_path, 'spectrum', '']),
-            region,
             **kwargs
         )
 
-    def __init__(self, csv_dir, spectrum_dir, region):
+    def __init__(self, csv_dir, spectrum_dir, **kwargs):
         self.csv_dir = csv_dir
         self.spectrum_dir = spectrum_dir
-        self.region = region
+        self.region = kwargs.get('region', '')
 
     def get_manifest_path(self):
         return self.csv_dir + 'manifest'
