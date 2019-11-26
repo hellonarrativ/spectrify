@@ -2,6 +2,11 @@
 History
 =======
 
+3.0.1 (2019-11-26)
+------------------
+
+* Fix changelog
+
 3.0.0 (2019-11-26)
 ------------------
 Backwards incompatible changes:
