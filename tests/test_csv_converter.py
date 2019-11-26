@@ -10,6 +10,7 @@ import sqlalchemy
 from spectrify.convert import CsvConverter
 from spectrify.utils.s3 import SimpleS3Config
 
+
 def get_stream(stream):
     if sys.version_info[0] < 3:
         return stream
@@ -64,7 +65,8 @@ class TestCsvConverter(TestCase):
             delimiter=delimiter,
             quoting=quoting,
             csv_dir="",
-            spectrum_dir=""
+            spectrum_dir="",
+            region=""
         )
         csv_converter = CsvConverter(sa_table, s3_config, delimiter=delimiter, quoting=quoting)
         columnar_data_chunks = [

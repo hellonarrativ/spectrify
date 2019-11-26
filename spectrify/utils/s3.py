@@ -60,9 +60,10 @@ class SimpleS3Config(S3Config):
             **kwargs
         )
 
-    def __init__(self, csv_dir, spectrum_dir):
+    def __init__(self, csv_dir, spectrum_dir, **kwargs):
         self.csv_dir = csv_dir
         self.spectrum_dir = spectrum_dir
+        self.region = kwargs.get('region', '')
 
     def get_manifest_path(self):
         return self.csv_dir + 'manifest'
@@ -72,6 +73,9 @@ class SimpleS3Config(S3Config):
 
     def get_spectrum_dir(self):
         return self.spectrum_dir
+
+    def get_bucket_region(self):
+        return self.region
 
 
 class S3GZipCSVReader:

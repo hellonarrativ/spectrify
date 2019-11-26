@@ -7,6 +7,7 @@ import unicodecsv as csv
 
 from spectrify.utils.s3 import S3GZipCSVReader
 
+
 class FakeS3Config(object):
     def __init__(self, fileobj):
         self.fileobj = fileobj
@@ -14,6 +15,7 @@ class FakeS3Config(object):
     def fs_open(self, *args, **kwargs):
         self.fileobj.seek(0)
         return self.fileobj
+
 
 class TestUtilsS3CSVReader(TestCase):
     def test_s3_gzip_csv_reader(self):

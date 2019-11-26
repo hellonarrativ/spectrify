@@ -222,7 +222,10 @@ class ConcurrentManifestConverter(CsvConverter):
         num_workers = self.kwargs.get('num_workers') or cpu_count()
         manifest = self.get_manifest()
         convert_args = [
-            (entry['url'], self.sa_table, self.s3_config, self.delimiter, self.escapechar, self.quoting, self.unicode_csv)
+            (
+                entry['url'], self.sa_table, self.s3_config, self.delimiter,
+                self.escapechar, self.quoting, self.unicode_csv
+            )
             for entry in manifest['entries']
         ]
 
