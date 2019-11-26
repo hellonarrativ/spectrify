@@ -2,6 +2,16 @@
 History
 =======
 
+3.0.0 (2019-11-26)
+------------------
+Backwards incompatible changes:
+* Add REGION parameter to UNLOAD operations
+* Bugfix: Correctly construct path for S3 bucket in "create-table" command
+Other Changes:
+* Support for obtaining credentials with AWS session token
+* Upgrade to pytest v4.6.6
+* Fix Flake8 errors
+
 2.0.0 (2019-03-09)
 ------------------
 
