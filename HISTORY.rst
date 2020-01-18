@@ -2,10 +2,17 @@
 History
 =======
 
+3.1.0 (2020-01-18)
+------------------
+
+* Remove psycopg2 requirement (allows use of either psycopg2 or psycopg2-binary)
+
+
 3.0.1 (2019-11-26)
 ------------------
 
 * Fix changelog
+
 
 3.0.0 (2019-11-26)
 ------------------
@@ -19,6 +26,7 @@ Other Changes:
 * Support for obtaining credentials with AWS session token
 * Upgrade to pytest v4.6.6
 * Fix Flake8 errors
+
 
 2.0.0 (2019-03-09)
 ------------------

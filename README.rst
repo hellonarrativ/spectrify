@@ -40,6 +40,7 @@ Install
 
 .. code-block:: bash
 
+    $ pip install psycopg2  # or psycopg2-binary
     $ pip install spectrify
 
 
